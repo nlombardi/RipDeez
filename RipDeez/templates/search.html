@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Search</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        img {
+            max-width: 100px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Search for Songs</h1>
+
+    <!-- Search form -->
+    <form method="POST">
+        <input type="text" name="search_term" placeholder="Enter song, artist, or album" value="{{ search_term }}" required>
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Display search results in a table -->
+    {% if songs %}
+        <h2>Results for "{{ search_term }}"</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Album Cover</th>
+                    <th>Song</th>
+                    <th>Artist</th>
+                    <th>Album</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for song in songs %}
+                    <tr>
+                        <td><img src="{{ song.album_pic }}" alt="Album cover"></td>
+                        <td>{{ song.song }}</td>
+                        <td>{{ song.artist }}</td>
+                        <td>{{ song.album }}</td>
+                        <td>
+                            <a href="{{ url_for('get_link', song_id=song.number) }}">
+                                Select Song
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+
+</body>
+</html>
