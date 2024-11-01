@@ -1,65 +1,62 @@
 # RipDeez 🎶
 
-RipDeez is a web application that allows users to search for music on Deezer, explore tracks and albums, and download links for personal use. This project is created solely for educational and personal purposes and is not endorsed, affiliated with, or responsible for downloading files from Deezer.
-Features
+RipDeez is a web application that allows users to search for music on Deezer, explore tracks and albums, and download links for personal use. This project is created solely for educational and personal purposes and is **not endorsed, affiliated with, or responsible for downloading files from Deezer**.
 
-    Search for tracks, albums, and artists on Deezer.
-    Explore song details including album art, song title, artist, album, and duration.
-    Download Links (if available) for songs or albums.
+## Features
+- **Search** for tracks, albums, and artists on Deezer.
+- **Explore** song details including album art, song title, artist, album, and duration.
+- **Download Links** (if available) for songs or albums.
 
-Installation
+## Installation
 
-    Clone the repository:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/RipDeez.git
+   ```
 
-    bash
+2. Navigate to the project directory:
+   ```bash
+   cd RipDeez
+   ```
 
-git clone https://github.com/yourusername/RipDeez.git
+3. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Navigate to the project directory:
+4. Set up your database (if applicable):
+   ```bash
+   python app.py
+   ```
 
-bash
+## Usage
 
-cd RipDeez
+1. Run the Flask app:
+   ```bash
+   python app.py
+   ```
 
-Install the required dependencies:
+2. Open your web browser and navigate to `http://127.0.0.1:5000/`.
 
-bash
+3. Use the search bar to search for your favorite music on Deezer and view available tracks.
 
-pip install -r requirements.txt
+4. Select any track to view additional details and retrieve download links.
 
-Set up your database (if applicable):
+> **Note**: This app only displays metadata and links. **Actual downloading of files is not provided, encouraged, or supported by RipDeez.**
 
-bash
+## Disclaimer
 
-    python app.py
+RipDeez is intended **solely for educational purposes** and **personal use**. This application does not facilitate, endorse, or encourage the illegal downloading of music files from Deezer or any other platform. All search results and data displayed by this app are provided as-is, and RipDeez is **not responsible** for any use of this information beyond personal purposes.
 
-Usage
+**Users are fully responsible for any and all actions taken through this app.** By using this app, you agree to comply with all applicable copyright laws and the terms of service of Deezer and other platforms.
 
-    Run the Flask app:
+## License
 
-    bash
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-    python app.py
+---
 
-    Open your web browser and navigate to http://127.0.0.1:5000/.
-
-    Use the search bar to search for your favorite music on Deezer and view available tracks.
-
-    Select any track to view additional details and retrieve download links.
-
-    Note: This app only displays metadata and links. Actual downloading of files is not provided, encouraged, or supported by RipDeez.
-
-Disclaimer
-
-RipDeez is intended solely for educational purposes and personal use. This application does not facilitate, endorse, or encourage the illegal downloading of music files from Deezer or any other platform. All search results and data displayed by this app are provided as-is, and RipDeez is not responsible for any use of this information beyond personal purposes.
-
-Users are fully responsible for any and all actions taken through this app. By using this app, you agree to comply with all applicable copyright laws and the terms of service of Deezer and other platforms.
-License
-
-This project is licensed under the MIT License. See the LICENSE file for more details.
-Additional Notes:
-
-    Database: The app stores search results locally in a database for easier access and organization.
-    Affiliation: RipDeez is not affiliated with or endorsed by Deezer.
-    Contributions: Contributions are welcome. Feel free to open issues or submit pull requests to help improve the app!
-
+### Additional Notes:
+1. **Database**: The app stores search results locally in a database for easier access and organization.
+2. **Affiliation**: RipDeez is not affiliated with or endorsed by Deezer.
+3. **Contributions**: Contributions are welcome. Feel free to open issues or submit pull requests to help improve the app!
