@@ -30,21 +30,10 @@ def _switch_to_iframe(driver: webdriver.Chrome(), timeout: int = 5):
 
 
 # Function to log in to Apple Music
-def login_to_apple_music(driver, apple_id, password):
-    driver.get('https://music.apple.com/')  # Navigate to Apple Music homepage
+def load_and_search(driver, apple_id, password):
+    driver.get('https://www.deezer.com/us/channels/explore/')  # Navigate to Deezer music
 
     time.sleep(3)  # Wait for the page to load
-
-    try:
-        # Click on the sign-in button
-        sign_in_button = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-            By.XPATH, "/html/body/div/div/div[3]/div/amp-chrome-player/div[2]/div[2]/button"
-            )))
-        time.sleep(3)
-        sign_in_button.click()
-    except TimeoutException as e:
-        print("Sign-in button not found, Apple Music might have changed the layout.")
-        return False
 
     # Check and see if the iFrame exists and is loaded with the login form
     _switch_to_iframe(driver)
