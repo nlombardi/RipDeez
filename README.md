@@ -1,4 +1,4 @@
-RipDeez 🎶
+# RipDeez 🎶
 
 RipDeez is a web application that allows users to search for music on Deezer, explore tracks and albums, and download links for personal use. This project is created solely for educational and personal purposes and is not endorsed, affiliated with, or responsible for downloading files from Deezer.
 Features
