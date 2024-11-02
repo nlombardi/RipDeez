@@ -29,9 +29,89 @@ def _switch_to_iframe(driver: webdriver.Chrome(), timeout: int = 5):
         print("Could not switch to the iframe.")
 
 
+# Function to log in to Apple Music
+def login_to_apple_music(driver, apple_id, password):
+    driver.get('https://music.apple.com/')  # Navigate to Apple Music homepage
+
+    time.sleep(3)  # Wait for the page to load
+
+    try:
+        # Click on the sign-in button
+        sign_in_button = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.XPATH, "/html/body/div/div/div[3]/div/amp-chrome-player/div[2]/div[2]/button"
+            )))
+        time.sleep(3)
+        sign_in_button.click()
+    except TimeoutException as e:
+        print("Sign-in button not found, Apple Music might have changed the layout.")
+        return False
+
+    # Check and see if the iFrame exists and is loaded with the login form
+    _switch_to_iframe(driver)
+
+    # Enter the Apple ID
+    try:
+        apple_id_input = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.ID, 'accountName'
+        )))
+        apple_id_input.send_keys(apple_id)
+        apple_id_input.send_keys(Keys.ENTER)
+        time.sleep(5)
+        _switch_to_iframe(driver)
+        continue_with_pass = WebDriverWait(driver, 10).until(EC.presence_of_element_located((
+            By.CSS_SELECTOR, '#continue-password'
+        )))
+        continue_with_pass.click()
+    except TimeoutException as e:
+        print("Continue with passcode button not found. Please check the page layout.")
+        return False
+
+    time.sleep(3)  # Wait for the password field to appear
+
+    # Enter the password
+    try:
+        password_input = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="password_text_field"]')))
+        password_input.send_keys(password)
+        password_input.send_keys(Keys.ENTER)
+    except TimeoutException as e:
+        print("Password input field not found. Please check the page layout.")
+        return False
+
+    time.sleep(5)  # Wait for login to complete
+
+    # Check if 2FA is enabled
+    try:
+        two_factor_auth = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'stepEl')))
+        verification_code = input("Enter the 2FA code sent to your trusted device: ")
+        code_input = driver.find_element(By.XPATH,
+                                         '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/div[1]/div/div/input[1]')
+        code_input.send_keys(verification_code)
+        notnow_button = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.XPATH, '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/fieldset/div/div[1]/button'
+        )))  # Find hte Not Now Button
+        # trust_button =  WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+        #     By.XPATH, '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/fieldset/div/div[2]/button[2]'
+        # )))  # Find the Trust button
+        notnow_button.click()
+        time.sleep(5)  # Wait for 2FA to complete
+    except TimeoutException:
+        print("2fa either not active or did not load properly.")
+        exception_response = input("Enter Y to continue if 2fa not present: ")
+        if exception_response.upper() != 'Y':
+            raise Exception("2FA didn't work!")
+
+    # Check for login failure
+    if "Your Apple ID or password was incorrect" in driver.page_source:
+        print("Login failed: Incorrect Apple ID or password.")
+        return False
+    else:
+        print("Login successful!")
+        return True
+
+
 # Function to search for songs and display them for selection
 def search_song_and_select(driver, song_name):
-    driver.get('https://www.deezer.com/us/channels/explore/')  # Navigate to Apple Music homepage
+    driver.get('https://music.apple.com/us/browse')  # Navigate to Apple Music homepage
 
     # Search for the song
     search_box = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
@@ -129,3 +209,23 @@ def get_playlist_song_links(driver, playlist_url):
 # # Main function to demonstrate usage
 # if __name__ == "__main__":
 #     driver = setup_driver()
+# #
+# #     # Login to Apple Music
+#     apple_id = input("Enter your Apple ID: ")
+#     password = input("Enter your Apple Music password: ")
+#     logged_in = login_to_apple_music(driver, apple_id, password)
+#
+#     if logged_in:
+#         # Search for a song and select from a list of results
+#         song_name = input("Enter the name of the song you want to search for: ")
+#         song_share_link = search_song_and_select(driver, song_name)
+#         if song_share_link:
+#             print(f"Share link for the selected song: {song_share_link}")
+#
+#         # Get all song links from a playlist
+#         playlist_url = "https://music.apple.com/us/playlist/example-playlist-url"  # Replace with a real playlist URL
+#         playlist_song_links = get_playlist_song_links(driver, playlist_url)
+#
+#         print(f"Song links from the playlist: {playlist_song_links}")
+#
+#     driver.quit()

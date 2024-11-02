@@ -1,5 +1,5 @@
 from pathlib import Path
-from sqlalchemy import create_engine, Column, Integer, String, UniqueConstraint
+from sqlalchemy import create_engine, Column, Integer, String, UniqueConstraint, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -18,13 +18,14 @@ Base = declarative_base()
 class Song(Base):
     __tablename__ = 'songs'
 
-    number = Column(Integer, primary_key=True, autoincrement=True)  # This will store the song's number, acts as a primary key
+    number = Column(Integer, primary_key=True, autoincrement=True)  # This will store the song's number as a primary key
     song = Column(String, nullable=False)
     artist = Column(String, nullable=False)
     album = Column(String, nullable=False)
     album_pic = Column(String, nullable=True)
     song_time = Column(String, nullable=False)
     link = Column(String, nullable=False)
+    popularity = Column(Float, nullable=False)
 
     # Add a unique constraint on (song, artist, album) to avoid duplicates
     __table_args__ = (UniqueConstraint('song', 'artist', 'album', name='_song_artist_album_uc'),)
@@ -54,7 +55,8 @@ def insert_song(session, song_data):
             album=song_data['Album'],
             album_pic=song_data['Album_Pic'],
             song_time=song_data['Song_Time'],
-            link=song_data['Link']
+            link=song_data['Link'],
+            popularity=song_data['Popularity']
         )
         # Add the new song to the session and commit it to the database
         session.add(new_song)
@@ -84,7 +86,8 @@ def get_all_songs(session):
 #         "Album": "Divide",
 #         "Album_Pic": "https://example.com/album-pic.jpg",
 #         "Song_Time": "3:53",
-#         "Link": "https://music.apple.com/song-link"
+#         "Link": "https://music.apple.com/song-link",
+#         "Popularity": 6.5,
 #     }
 #
 #     # Insert the song into the database

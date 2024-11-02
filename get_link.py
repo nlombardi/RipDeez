@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchAttributeException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -10,12 +10,15 @@ import time
 from connect_and_store import create_db, insert_song
 from sqlalchemy.orm import sessionmaker
 
+chrome_path = 'Q:/Development/Web Scraping/Chrome/chromedriver.exe'
+
 
 # Function to initialize WebDriver
 def setup_driver():
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    # options.add_argument("--headless")
+    driver = webdriver.Chrome(service=Service(chrome_path), options=options)
     return driver
 
 
@@ -29,130 +32,122 @@ def _switch_to_iframe(driver: webdriver.Chrome(), timeout: int = 5):
         print("Could not switch to the iframe.")
 
 
-# Function to log in to Apple Music
-def load_and_search(driver, apple_id, password):
-    driver.get('https://www.deezer.com/us/channels/explore/')  # Navigate to Deezer music
-
-    time.sleep(3)  # Wait for the page to load
-
-    # Check and see if the iFrame exists and is loaded with the login form
-    _switch_to_iframe(driver)
-
-    # Enter the Apple ID
+def wait_for_element(driver, time_to_wait, by_type, by_element):
     try:
-        apple_id_input = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-            By.ID, 'accountName'
-        )))
-        apple_id_input.send_keys(apple_id)
-        apple_id_input.send_keys(Keys.ENTER)
-        time.sleep(5)
-        _switch_to_iframe(driver)
-        continue_with_pass = WebDriverWait(driver, 10).until(EC.presence_of_element_located((
-            By.CSS_SELECTOR, '#continue-password'
-        )))
-        continue_with_pass.click()
-    except TimeoutException as e:
-        print("Continue with passcode button not found. Please check the page layout.")
-        return False
-
-    time.sleep(3)  # Wait for the password field to appear
-
-    # Enter the password
-    try:
-        password_input = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="password_text_field"]')))
-        password_input.send_keys(password)
-        password_input.send_keys(Keys.ENTER)
-    except TimeoutException as e:
-        print("Password input field not found. Please check the page layout.")
-        return False
-
-    time.sleep(5)  # Wait for login to complete
-
-    # Check if 2FA is enabled
-    try:
-        two_factor_auth = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'stepEl')))
-        verification_code = input("Enter the 2FA code sent to your trusted device: ")
-        code_input = driver.find_element(By.XPATH,
-                                         '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/div[1]/div/div/input[1]')
-        code_input.send_keys(verification_code)
-        notnow_button = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-            By.XPATH, '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/fieldset/div/div[1]/button'
-        )))  # Find hte Not Now Button
-        # trust_button =  WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-        #     By.XPATH, '//*[@id="stepEl"]/div/hsa2-sk7/div/div[2]/fieldset/div/div[2]/button[2]'
-        # )))  # Find the Trust button
-        notnow_button.click()
-        time.sleep(5)  # Wait for 2FA to complete
+        if by_type == 'CSS_SELECTOR':
+            element = WebDriverWait(driver, time_to_wait).until(EC.presence_of_element_located((
+                By.CSS_SELECTOR, by_element
+            )))
+        elif by_type == 'XPATH':
+            element = WebDriverWait(driver, time_to_wait).until(EC.presence_of_element_located((
+                By.XPATH, by_element
+            )))
+        elif by_type == 'CLASS':
+            element = WebDriverWait(driver, time_to_wait).until(EC.presence_of_element_located((
+                By.CLASS_NAME, by_element
+            )))
+        elif by_type == 'TAG':
+            element = WebDriverWait(driver, time_to_wait).until(EC.presence_of_element_located((
+                By.TAG_NAME, by_element
+            )))
+        elif by_type == 'ID':
+            element = WebDriverWait(driver, time_to_wait).until(EC.presence_of_element_located((
+                By.ID, by_element
+            )))
+        else:
+            return print("By type is not valid.")
+        return element
     except TimeoutException:
-        print("2fa either not active or did not load properly.")
-        exception_response = input("Enter Y to continue if 2fa not present: ")
-        if exception_response.upper() != 'Y':
-            raise Exception("2FA didn't work!")
-
-    # Check for login failure
-    if "Your Apple ID or password was incorrect" in driver.page_source:
-        print("Login failed: Incorrect Apple ID or password.")
-        return False
-    else:
-        print("Login successful!")
-        return True
+        print("Could not locate the element.")
 
 
 # Function to search for songs and display them for selection
 def search_song_and_select(driver, song_name):
-    driver.get('https://music.apple.com/us/browse')  # Navigate to Apple Music homepage
+    driver = setup_driver()
+    song_name = "Get Crazy"
 
-    # Search for the song
-    search_box = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-        By.XPATH, '//input[@type="search"]'
-    )))
-    search_box.send_keys(song_name)
-    search_box.send_keys(Keys.ENTER)
+    base_url = 'https://www.deezer.com'
 
-    time.sleep(3)  # Give time for search results to load
+    # Try and search through http first
+    song_url = base_url + '/search/' + '%20'.join(song_name.split(' '))
+    driver.get(song_url)
 
-    # Select the Songs link
-    try:
-        songs_button = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-            By.XPATH, '//*[@id="scrollable-page"]/main/div/div[2]/div[5]/div/div[1]/div/h2/button'
-        )))
-        songs_button.click()
-    except TimeoutException:
-        print("Couldn't locate the Songs button, are you sure the search yielded resutls?")
+    # Accept cookies if pop-up is there
+    accept_cookies = wait_for_element(driver, 5, 'ID', 'gdpr-btn-accept-all')
+    if accept_cookies:
+        accept_cookies.click()
+
+    # time.sleep(3)  # Give time for search results to load
+
+    # Click the tracks tab
+    track_tab = wait_for_element(driver, 5, 'XPATH', "//a[text()='Tracks']")
+    if track_tab:
+        track_tab.click()
+
+    # driver.get(base_url + '/us/channels/explore/')
+
 
     # Scrape all songs from the results
     all_songs = ''
-    try:
-        all_songs = WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-            By.CLASS_NAME, 'songs-list-row'
-        )))
-        all_songs = driver.find_elements(By.CLASS_NAME, 'songs-list-row')
-    except TimeoutException:
-        print("Couldn't locate the songs")
-
+    all_songs = wait_for_element(driver, 5, 'XPATH', "//div[@role='rowgroup']")
+    time.sleep(3)
     if all_songs:
+        all_songs = driver.find_elements(By.XPATH, "//div[@role='row']")
+
         # Open the database connection and create the table if it isn't created yet
         Session = sessionmaker(bind=create_db())
         session = Session()
         # Loop through each <li> and print the song
         for i, song in enumerate(all_songs, start=1):
-            album_pic = song.find_element(By.TAG_NAME, 'source').get_attribute('srcset')
-            album_pic = album_pic.split(",")[-1].split(" ")[0]  # Get the larger image source
-            song_name = song.find_element(By.CLASS_NAME, 'songs-list__col--song')
-            song_artist = song.find_element(By.CLASS_NAME, 'songs-list__col--secondary')
-            song_album = song.find_element(By.CLASS_NAME, 'songs-list__col--tertiary')
-            song_time = song.find_element(By.CLASS_NAME, 'songs-list__col--time')
-            song_link = song_name.find_element(By.TAG_NAME, 'a').get_attribute('href')
+            song_artist, song_name, album_pic, song_link = None, None, None, None
+            # Click the info button
+            song_info_button = song.find_element(By.CLASS_NAME, 'popper-wrapper')
+            if song_info_button:
+                song_info_button.click()
+                time.sleep(2)
+                share_div = driver.find_element(By.CLASS_NAME, 'popper')
+                share_button = share_div.find_element(By.XPATH, "//span[text()='Share']")
+                if share_button:
+                    share_button.click()
+                    time.sleep(2)
+                    # Get the modal and information within (easier than scraping the DIVs and gets a larger image)
+                    share_modal = driver.find_element(By.ID, 'modal_sharebox')
+                    album_pic = share_modal.find_element(By.TAG_NAME, 'img').get_attribute('src')
+                    song_name = share_modal.find_element(By.ID, 'share-title').text
+                    song_artist = share_modal.find_element(By.ID, 'share-subtitle').text.split("by")[-1].lstrip()
+                    song_link = share_modal.find_element(By.ID, 'share-input').get_attribute('value')
+                    # Close the Model
+                    close_button = share_modal.find_element(By.ID, 'modal-close')
+                    if close_button:
+                        close_button.click()
+                else:
+                    print("Share button not found, maybe remapped?")
+            else:
+                print("Share info button not found, maybe remapped?")
+            # Song Album, Song Time, Song Popularity are not within the modal
+            if not album_pic:
+                album_pic = song.find_element(By.TAG_NAME, 'img').get_attribute('src')  # thumbnail
+            if not song_artist:
+                song_artist = song.find_elements(By.XPATH, "//a[@data-testid='artist']")
+            if not song_name:
+                song_name = song.find_element(By.XPATH, "//span[@data-testid='title']")
+            song_album = song.find_element(By.XPATH, "//a[@data-testid='album']").text
+            song_time = song.find_element(By.XPATH, "//span[@data-testid='duration']").text
+            song_pop = song.find_element(By.XPATH, "//div[@data-testid='popularity']").get_attribute('aria-label')
+            song_pop = float(song_pop.split(":")[-1].split("/")[0].strip(" "))
 
             song_data = {
-                'Song': song_name.text,
-                'Artist': song_artist.text,
-                'Album': song_album.text,
+                'Song': song_name,
+                'Artist': song_artist,
+                'Album': song_album,
                 'Album_Pic': album_pic,
-                'Song_Time': song_time.text,
-                'Link': song_link
+                'Song_Time': song_time,
+                'Link': song_link,
+                'Popularity': song_pop
             }
-            insert_song(session, song_data)
+            print(song_data)
+            break
+            # insert_song(session, song_data)
 
 
     # Let the user select a song by index
@@ -179,6 +174,9 @@ def search_song_and_select(driver, song_name):
     return share_link
 
 
+
+
+
 # Function to scrape all song links from a playlist
 def get_playlist_song_links(driver, playlist_url):
     driver.get(playlist_url)  # Navigate to the playlist page
@@ -195,26 +193,22 @@ def get_playlist_song_links(driver, playlist_url):
     return song_links
 
 
-# # Main function to demonstrate usage
-# if __name__ == "__main__":
-#     driver = setup_driver()
-# #
-# #     # Login to Apple Music
-#     apple_id = input("Enter your Apple ID: ")
-#     password = input("Enter your Apple Music password: ")
-#     logged_in = login_to_apple_music(driver, apple_id, password)
-#
-#     if logged_in:
-#         # Search for a song and select from a list of results
-#         song_name = input("Enter the name of the song you want to search for: ")
-#         song_share_link = search_song_and_select(driver, song_name)
-#         if song_share_link:
-#             print(f"Share link for the selected song: {song_share_link}")
-#
-#         # Get all song links from a playlist
-#         playlist_url = "https://music.apple.com/us/playlist/example-playlist-url"  # Replace with a real playlist URL
-#         playlist_song_links = get_playlist_song_links(driver, playlist_url)
-#
-#         print(f"Song links from the playlist: {playlist_song_links}")
-#
-#     driver.quit()
+# Main function to demonstrate usage
+if __name__ == "__main__":
+    driver = setup_driver()
+
+
+    if logged_in:
+        # Search for a song and select from a list of results
+        song_name = input("Enter the name of the song you want to search for: ")
+        song_share_link = search_song_and_select(driver, song_name)
+        if song_share_link:
+            print(f"Share link for the selected song: {song_share_link}")
+
+        # Get all song links from a playlist
+        playlist_url = "https://music.apple.com/us/playlist/example-playlist-url"  # Replace with a real playlist URL
+        playlist_song_links = get_playlist_song_links(driver, playlist_url)
+
+        print(f"Song links from the playlist: {playlist_song_links}")
+
+    driver.quit()
